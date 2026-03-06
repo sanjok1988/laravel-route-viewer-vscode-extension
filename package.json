@@ -1,0 +1,52 @@
+{
+  "name": "laravel-route-viewer",
+  "displayName": "Laravel Route Viewer",
+  "description": "View and search Laravel routes in a web UI.",
+  "version": "0.0.1",
+  "publisher": "sanjokdangol",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Laravel"
+  ],
+  "activationEvents": [
+    "onCommand:laravelRouteViewer.showRoutes"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "laravelRouteViewer.showRoutes",
+        "title": "Laravel: Show Routes (UI)"
+      }
+    ],
+    "configuration": {
+      "title": "Laravel Route Viewer",
+      "properties": {
+        "laravelRouteViewer.phpPath": {
+          "type": "string",
+          "default": "php",
+          "description": "Path to PHP executable."
+        },
+        "laravelRouteViewer.artisanPath": {
+          "type": "string",
+          "default": "artisan",
+          "description": "Path to artisan file, relative to workspace folder."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.26.0"
+  }
+}
