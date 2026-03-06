@@ -320,7 +320,6 @@ function escapeRegExp(s: string): string {
 function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
   const nonce = String(Date.now());
 
-  // CSP: keep it simple, inline styles ok; scripts only with nonce
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -334,123 +333,345 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
       --bg: var(--vscode-editor-background);
       --fg: var(--vscode-editor-foreground);
       --muted: var(--vscode-descriptionForeground);
-      --border: var(--vscode-panel-border);
+      --border: color-mix(in srgb, var(--vscode-panel-border) 75%, transparent);
       --accent: var(--vscode-button-background);
       --accentFg: var(--vscode-button-foreground);
       --inputBg: var(--vscode-input-background);
       --inputFg: var(--vscode-input-foreground);
       --inputBorder: var(--vscode-input-border);
       --rowHover: var(--vscode-list-hoverBackground);
-      --badgeBg: color-mix(in srgb, var(--accent) 25%, transparent);
+      --cardBg: color-mix(in srgb, var(--bg) 94%, white 2%);
+      --headerBg: color-mix(in srgb, var(--bg) 86%, transparent);
+      --soft: color-mix(in srgb, var(--fg) 8%, transparent);
+      --shadow: 0 10px 30px rgba(0,0,0,.14);
+
+      --get: #22c55e;
+      --post: #3b82f6;
+      --put: #f59e0b;
+      --patch: #fb923c;
+      --delete: #ef4444;
+      --options: #a855f7;
+      --head: #6b7280;
+      --defaultMethod: #64748b;
     }
+
+    * { box-sizing: border-box; }
+
     body{
-      background: var(--bg);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 28%),
+        var(--bg);
       color: var(--fg);
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
       margin: 0;
+      padding: 0;
     }
+
     header{
       position: sticky;
       top: 0;
-      background: color-mix(in srgb, var(--bg) 92%, transparent);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 14px;
+      z-index: 20;
       display: flex;
-      gap: 10px;
       align-items: center;
-      z-index: 10;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--headerBg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
     }
+
+    .brand{
+      display: flex;
+      flex-direction: column;
+      min-width: 170px;
+    }
+
     .title{
-      font-weight: 600;
-      margin-right: 8px;
-      white-space: nowrap;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .2px;
     }
-    input[type="text"]{
+
+    .subtitle{
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .searchWrap{
       flex: 1;
-      background: var(--inputBg);
-      color: var(--inputFg);
-      border: 1px solid var(--inputBorder, var(--border));
-      border-radius: 8px;
-      padding: 8px 10px;
-      outline: none;
+      position: relative;
     }
+
+    input[type="text"]{
+      width: 100%;
+      background: color-mix(in srgb, var(--inputBg) 92%, white 2%);
+      color: var(--inputFg);
+      border: 1px solid color-mix(in srgb, var(--inputBorder, var(--border)) 70%, transparent);
+      border-radius: 12px;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    input[type="text"]:focus{
+      border-color: color-mix(in srgb, var(--accent) 65%, white 10%);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
     button{
-      background: var(--accent);
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent) 92%, white 10%),
+        var(--accent)
+      );
       color: var(--accentFg);
       border: none;
-      border-radius: 8px;
-      padding: 8px 10px;
+      border-radius: 12px;
+      padding: 10px 14px;
       cursor: pointer;
+      font-weight: 600;
+      transition: transform .15s ease, opacity .15s ease, box-shadow .18s ease;
+      box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 22%, transparent);
     }
-    button.secondary{
-      background: transparent;
-      color: var(--fg);
-      border: 1px solid var(--border);
+
+    button:hover{
+      transform: translateY(-1px);
+      opacity: .96;
     }
-    main{ padding: 10px 14px 18px; }
-    .meta{ color: var(--muted); margin: 8px 0 10px; display:flex; gap:12px; flex-wrap: wrap;}
+
+    button:active{
+      transform: translateY(0);
+    }
+
+    main{
+      padding: 16px;
+    }
+
+    .meta{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
     .badge{
-      display:inline-block;
-      padding: 2px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
       border-radius: 999px;
-      background: var(--badgeBg);
-      border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
       color: var(--fg);
       font-size: 12px;
+      font-weight: 500;
     }
+
+    .status{
+      color: var(--muted);
+      margin: 6px 2px 14px;
+      min-height: 18px;
+      font-size: 12px;
+    }
+
+    .tableWrap{
+      background: var(--cardBg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
     table{
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 12px;
     }
+
     thead th{
       text-align: left;
-      font-size: 12px;
-      letter-spacing: .02em;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
       color: var(--muted);
       background: color-mix(in srgb, var(--bg) 90%, transparent);
       border-bottom: 1px solid var(--border);
-      padding: 10px 10px;
+      padding: 14px 12px;
       position: sticky;
-      top: 56px; /* header height approx */
+      top: 70px;
       z-index: 5;
     }
+
     tbody td{
-      padding: 10px 10px;
-      border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      padding: 14px 12px;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
       vertical-align: top;
-      font-family: var(--vscode-editor-font-family);
       font-size: 12.5px;
+      line-height: 1.45;
     }
-    tbody tr:hover{ background: var(--rowHover); }
-    tbody tr.clickable{ cursor: pointer; }
-    .mono{ font-family: var(--vscode-editor-font-family); }
-    .muted{ color: var(--muted); }
+
+    tbody tr{
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    tbody tr:hover{
+      background: color-mix(in srgb, var(--rowHover) 72%, transparent);
+    }
+
+    tbody tr.clickable{
+      cursor: pointer;
+    }
+
+    tbody tr.clickable:hover{
+      background: color-mix(in srgb, var(--accent) 8%, var(--rowHover));
+    }
+
+    tbody tr:last-child td{
+      border-bottom: none;
+    }
+
+    .mono{
+      font-family: var(--vscode-editor-font-family);
+    }
+
+    .muted{
+      color: var(--muted);
+    }
+
+    .methodGroup{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .methodPill{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      color: white;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .method-get{
+      background: color-mix(in srgb, var(--get) 82%, black 6%);
+      border-color: color-mix(in srgb, var(--get) 55%, white 10%);
+    }
+
+    .method-post{
+      background: color-mix(in srgb, var(--post) 82%, black 6%);
+      border-color: color-mix(in srgb, var(--post) 55%, white 10%);
+    }
+
+    .method-put{
+      background: color-mix(in srgb, var(--put) 85%, black 6%);
+      border-color: color-mix(in srgb, var(--put) 55%, white 10%);
+      color: #1f1300;
+    }
+
+    .method-patch{
+      background: color-mix(in srgb, var(--patch) 88%, black 4%);
+      border-color: color-mix(in srgb, var(--patch) 55%, white 10%);
+      color: #231200;
+    }
+
+    .method-delete{
+      background: color-mix(in srgb, var(--delete) 84%, black 7%);
+      border-color: color-mix(in srgb, var(--delete) 55%, white 10%);
+    }
+
+    .method-options{
+      background: color-mix(in srgb, var(--options) 84%, black 6%);
+      border-color: color-mix(in srgb, var(--options) 55%, white 10%);
+    }
+
+    .method-head{
+      background: color-mix(in srgb, var(--head) 84%, black 6%);
+      border-color: color-mix(in srgb, var(--head) 55%, white 10%);
+    }
+
+    .method-default{
+      background: color-mix(in srgb, var(--defaultMethod) 84%, black 6%);
+      border-color: color-mix(in srgb, var(--defaultMethod) 55%, white 10%);
+    }
+
+    .routeName{
+      font-weight: 600;
+      color: color-mix(in srgb, var(--fg) 94%, white 4%);
+    }
+
+    .actionText{
+      color: color-mix(in srgb, var(--fg) 92%, white 2%);
+    }
+
     .pill{
-      display:inline-block;
-      padding: 2px 7px;
-      border: 1px solid var(--border);
+      display:inline-flex;
+      align-items:center;
+      padding: 4px 8px;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
       border-radius: 999px;
       margin-right: 6px;
-      margin-bottom: 4px;
-      font-size: 12px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--soft) 80%, transparent);
+    }
+
+    .empty{
+      padding: 26px 12px;
+      text-align: center;
       color: var(--muted);
     }
-    .status{
-      padding: 10px 0;
-      color: var(--muted);
+
+    .uriText{
+      font-weight: 600;
+      color: color-mix(in srgb, var(--fg) 96%, white 2%);
+    }
+
+    @media (max-width: 900px){
+      thead th:nth-child(3),
+      tbody td:nth-child(3){
+        display: none;
+      }
+    }
+
+    @media (max-width: 700px){
+      header{
+        flex-wrap: wrap;
+      }
+
+      .brand{
+        width: 100%;
+      }
+
+      thead th:nth-child(5),
+      tbody td:nth-child(5){
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">Laravel Routes</div>
-    <input id="q" type="text" placeholder="Search: uri, name, method, action, middleware…" />
+    <div class="brand">
+      <div class="title">Laravel Routes</div>
+      <div class="subtitle">Browse, search, and open route actions</div>
+    </div>
+
+    <div class="searchWrap">
+      <input id="q" type="text" placeholder="Search routes by URI, name, method, action, middleware..." />
+    </div>
+
     <button id="refresh">Refresh</button>
   </header>
 
@@ -458,29 +679,30 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
     <div class="meta">
       <span class="badge" id="count">0 routes</span>
       <span class="badge" id="filtered">0 shown</span>
-      <span class="badge" id="hint">Click a row to open controller action (best effort)</span>
+      <span class="badge" id="hint">Click a route row to open its controller action</span>
     </div>
 
     <div id="status" class="status"></div>
 
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 140px;">Method</th>
-          <th>URI</th>
-          <th style="width: 220px;">Name</th>
-          <th style="width: 420px;">Action</th>
-          <th>Middleware</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 150px;">Method</th>
+            <th>URI</th>
+            <th style="width: 220px;">Name</th>
+            <th style="width: 420px;">Action</th>
+            <th>Middleware</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
   </main>
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
 
-    /** @type {any[]} */
     let routes = [];
     let filtered = [];
 
@@ -490,13 +712,55 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
     const $count = document.getElementById('count');
     const $filtered = document.getElementById('filtered');
 
-    function setStatus(text){ $status.textContent = text || ''; }
+    function setStatus(text){
+      $status.textContent = text || '';
+    }
+
     function setCounts(){
       $count.textContent = routes.length + ' routes';
       $filtered.textContent = filtered.length + ' shown';
     }
 
-    function norm(s){ return (s ?? '').toString().toLowerCase(); }
+    function norm(s){
+      return (s ?? '').toString().toLowerCase();
+    }
+
+    function escapeHtml(s){
+      return (s ?? '').toString()
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function getMethodClass(method){
+      const m = norm(method);
+      if (m === 'get') return 'method-get';
+      if (m === 'post') return 'method-post';
+      if (m === 'put') return 'method-put';
+      if (m === 'patch') return 'method-patch';
+      if (m === 'delete') return 'method-delete';
+      if (m === 'options') return 'method-options';
+      if (m === 'head') return 'method-head';
+      return 'method-default';
+    }
+
+    function renderMethods(methodValue){
+      const methods = (methodValue || '')
+        .toString()
+        .split('|')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      if (!methods.length) {
+        return '<span class="muted">—</span>';
+      }
+
+      return '<div class="methodGroup">' + methods.map(method => {
+        return '<span class="methodPill ' + getMethodClass(method) + '">' + escapeHtml(method) + '</span>';
+      }).join('') + '</div>';
+    }
 
     function render(){
       $rows.innerHTML = '';
@@ -504,7 +768,7 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
 
       if (filtered.length === 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="5" class="muted">No routes found.</td>';
+        tr.innerHTML = '<td colspan="5" class="empty">No routes found.</td>';
         $rows.appendChild(tr);
         return;
       }
@@ -513,19 +777,26 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
         const tr = document.createElement('tr');
         const action = (r.action ?? '').toString();
         const isClickable = action.includes('@') && action.toLowerCase() !== 'closure';
-        if (isClickable) tr.classList.add('clickable');
+
+        if (isClickable) {
+          tr.classList.add('clickable');
+        }
 
         const methods = (r.method || (Array.isArray(r.methods) ? r.methods.join('|') : '') || '').toString();
         const uri = (r.uri ?? '').toString();
         const name = (r.name ?? '').toString();
-        const mw = Array.isArray(r.middleware) ? r.middleware : (typeof r.middleware === 'string' ? r.middleware.split(',').map(s=>s.trim()).filter(Boolean) : []);
+        const mw = Array.isArray(r.middleware)
+          ? r.middleware
+          : (typeof r.middleware === 'string'
+              ? r.middleware.split(',').map(s => s.trim()).filter(Boolean)
+              : []);
 
         tr.innerHTML = \`
-          <td class="mono">\${escapeHtml(methods)}</td>
-          <td class="mono">\${escapeHtml(uri)}</td>
-          <td class="mono">\${name ? escapeHtml(name) : '<span class="muted">—</span>'}</td>
-          <td class="mono">\${action ? escapeHtml(action) : '<span class="muted">—</span>'}</td>
-          <td>\${mw.length ? mw.map(x => '<span class="pill">'+escapeHtml(x)+'</span>').join('') : '<span class="muted">—</span>'}</td>
+          <td>\${renderMethods(methods)}</td>
+          <td class="mono uriText">\${escapeHtml(uri)}</td>
+          <td class="mono">\${name ? '<span class="routeName">' + escapeHtml(name) + '</span>' : '<span class="muted">—</span>'}</td>
+          <td class="mono actionText">\${action ? escapeHtml(action) : '<span class="muted">—</span>'}</td>
+          <td>\${mw.length ? mw.map(x => '<span class="pill">' + escapeHtml(x) + '</span>').join('') : '<span class="muted">—</span>'}</td>
         \`;
 
         if (isClickable) {
@@ -538,29 +809,28 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
       }
     }
 
-    function escapeHtml(s){
-      return (s ?? '').toString()
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#039;");
-    }
-
     function applyFilter(){
       const q = norm($q.value).trim();
+
       if (!q) {
         filtered = routes.slice();
         render();
         return;
       }
+
       filtered = routes.filter(r => {
         const hay = [
-          r.method, r.uri, r.name, r.action,
+          r.method,
+          Array.isArray(r.methods) ? r.methods.join(' ') : '',
+          r.uri,
+          r.name,
+          r.action,
           Array.isArray(r.middleware) ? r.middleware.join(' ') : r.middleware
         ].map(norm).join(' | ');
+
         return hay.includes(q);
       });
+
       render();
     }
 
@@ -573,8 +843,9 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
     }
 
     $q.addEventListener('input', debounce(applyFilter, 120));
+
     document.getElementById('refresh').addEventListener('click', () => {
-      setStatus('Refreshing…');
+      setStatus('Refreshing...');
       vscode.postMessage({ type: 'refresh' });
     });
 
@@ -583,7 +854,7 @@ function getHtml(webview: vscode.Webview, _extensionUri: vscode.Uri): string {
       if (!msg) return;
 
       if (msg.type === 'loading') {
-        setStatus(msg.message || 'Loading…');
+        setStatus(msg.message || 'Loading...');
         return;
       }
 

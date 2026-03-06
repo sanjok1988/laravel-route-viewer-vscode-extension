@@ -4,6 +4,10 @@
   "description": "View and search Laravel routes in a web UI.",
   "version": "0.0.1",
   "publisher": "sanjokdangol",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:sanjok1988/laravel-route-viewer-vscode-extension.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
